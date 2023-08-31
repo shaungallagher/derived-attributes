@@ -75,7 +75,7 @@ Derived Attributes allows you to instead work with the data in its JSON form, sp
 | `total_vendor_count`           | `source`         | `parse_len`        | `$.records[*].vendors`                                                |
 | `max_budget_only_contract`     | `source`         | `parse_max`        | `$.records[*].vendors[?has_contract = true)].budget`                  |
 | `_used_budget`                 | `source`         | `parse_list`       | `$.records[*].vendors[*].expenses / $.records[*].vendors[*].budget`   |
-| `avg_used_budget`              | `_unused_budget` | `parse_mean`       |                                                                       |
+| `avg_used_budget`              | `_used_budget`   | `parse_mean`       |                                                                       |
 
 
 
