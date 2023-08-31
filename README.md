@@ -62,7 +62,7 @@ source = {
 
 Suppose you would like to derive the following attributes based on this data:
 
-* `vendor_count`: The number of vendors across all businesses.
+* `total_vendor_count`: The number of vendors across all businesses.
 * `max_budget_only_contract`: The highest budget for vendors with a contract.
 * `avg_used_budget`: The average percentage of the monthly budget that has been unused.
 
