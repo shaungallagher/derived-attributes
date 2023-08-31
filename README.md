@@ -70,12 +70,12 @@ One approach to computing these derived values might be to normalize the data, c
 
 Derived Attributes allows you to instead work with the data in its JSON form, specifying the computions using a combination of Subject-Verb-Object grammar and JSONPath syntax:
 
-| Attribute                    | Subject        | Verb             | Object                                                              |
-| ---------------------------- | -------------  | ---------------- | ------------------------------------------------------------------- |
-| total_vendor_count           | source         | parse_len        | $.records[*].vendors                                                |
-| max_budget_only_contract     | source         | parse_max        | $.records[*].vendors[?has_contract = true)].budget                  |
-| _used_budget                 | source         | parse_list       | $.records[*].vendors[*].expenses / $.records[*].vendors[*].budget   |
-| avg_used_budget              | _unused_budget | parse_mean       |                                                                     |
+| Attribute                      | Subject          | Verb               | Object                                                                |
+| ------------------------------ | ---------------  | ------------------ | --------------------------------------------------------------------- |
+| `total_vendor_count`           | `source`         | `parse_len`        | `$.records[*].vendors`                                                |
+| `max_budget_only_contract`     | `source`         | `parse_max`        | `$.records[*].vendors[?has_contract = true)].budget`                  |
+| `_used_budget`                 | `source`         | `parse_list`       | `$.records[*].vendors[*].expenses / $.records[*].vendors[*].budget`   |
+| `avg_used_budget`              | `_unused_budget` | `parse_mean`       |                                                                       |
 
 
 
