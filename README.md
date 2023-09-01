@@ -12,7 +12,7 @@ It is common, in such a case, to pass the object through a processing layer that
 
 For instance, if your JSON object contains a list of customer transactions, one useful derived value might be `average_order_value`.
 
-This library provides a fast, succint way of defining and computing these derived attributes.  These definitions can be stored and managed in a variety of formats: in CSV files, in a database table, or in the codebase itself.
+This library provides a fast, succint way of defining and computing these derived attributes.  (Essentially, the library becomes your processing layer.)  The derived attributes you define can be stored and managed in a variety of formats: in CSV files, in a database table, or in the codebase itself.
 
 
 ## Example
