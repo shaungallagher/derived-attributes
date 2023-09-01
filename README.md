@@ -107,12 +107,25 @@ The grammar supports the ability to nest operations.  Each Derived Attribute can
 | sum             | Returns the sum of a list of numeric values provided as a Subject value.                  |
 | min             | Returns the minimum number in a list of numeric values provided as a Subject value.       |
 | max             | Returns the maximum number in a list of numeric values provided as a Subject value.       |
+| mean            | Returns the average of a list of numeric values provided as a Subject value.              |
 | parse           | Parse a JSONPath expression that matches a single scalar value, then return that value.   |
 | parse_list      | Parse a JSONPath expression that matches a list of values, then return that list.         |
-| parse_len       | Returns the number of values that match a JSONPath expression                             |
-| parse_sum       | Returns the sum of values that match a JSONPath expression                                |
-| parse_min       | Returns the minimum numeric value from all values that match a JSONPath expression        |
-| parse_max       | Returns the maximum numeric value from all values that match a JSONPath expression        |
+| parse_len       | Returns the number of values that match a JSONPath expression.                            |
+| parse_sum       | Returns the sum of values that match a JSONPath expression.                               |
+| parse_min       | Returns the minimum numeric value from all values that match a JSONPath expression.       |
+| parse_max       | Returns the maximum numeric value from all values that match a JSONPath expression.       |
+| parse_mean      | Returns the average numeric value from all values that match a JSONPath expression.       |
+
+## JSONPath syntax in Objects
+
+The Derived Attributes library uses [jsonpath-ng](https://github.com/h2non/jsonpath-ng) to parse JSONPath expressions.
+
+Please see that project's [JSONPath Syntax](https://github.com/h2non/jsonpath-ng) section for more details about how to construct these expressions.
+
+
+
+
+
 
 
 
