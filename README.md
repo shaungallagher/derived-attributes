@@ -78,6 +78,50 @@ Derived Attributes allows you to instead work with the data in its JSON form, sp
 | `avg_used_budget`              | `_used_budget`   | `parse_mean`       |                                                                       |
 
 
+## Subject-Verb-Object grammar
+
+In the simple Subject-Verb-Object grammar this library uses:
+
+* The Subject is a reference to a raw value (e.g. the source data), or to another derived attribute.
+
+* The Verb is a function to be performed against that value (e.g. an operator or aggregator).
+
+* An optional Object value can be supplied as a second parameter to the Verb function.
+
+Each S-V-O combination forms a simple sentence, the output of which is a Derived Attribute.
+
+The grammar supports the ability to nest operations.  Each Derived Attribute can be used as inputs to other sentences.
+
+
+## Supported Verbs
+
+| Verb            | Definition                                                                                |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| >               | Returns true if the Subject value is greater than the Object value; else false.           |
+| <               | Returns true if the Subject value is less than the Object value; else false.              |
+| =               | Returns true if the Subject value equals the Object value; else false.                    |
+| eq              | Returns true if the (non-numeric) Subject value equals the Object value; else false.      |
+| and             | Returns true if the Subject value and Object value are both truthy; else false.           |
+| or              | Returns true if either the Subject or Object value is truthy; else false.                 |
+| len             | Returns the length of a list provided as a Subject value.                                 |
+| sum             | Returns the sum of a list of numeric values provided as a Subject value.                  |
+| min             | Returns the minimum number in a list of numeric values provided as a Subject value.       |
+| max             | Returns the maximum number in a list of numeric values provided as a Subject value.       |
+| parse           | Parse a JSONPath expression that matches a single scalar value, then return that value.   |
+| parse_list      | Parse a JSONPath expression that matches a list of values, then return that list.         |
+| parse_len       | Returns the number of values that match a JSONPath expression                             |
+| parse_sum       | Returns the sum of values that match a JSONPath expression                                |
+| parse_min       | Returns the minimum numeric value from all values that match a JSONPath expression        |
+| parse_max       | Returns the maximum numeric value from all values that match a JSONPath expression        |
+
+
+
+
+
+
+
+
+
 
 
 
