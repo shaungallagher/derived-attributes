@@ -77,6 +77,16 @@ Derived Attributes allows you to instead work with the data in its JSON form, sp
 | `_used_budget`                 | `source`         | `parse_list`       | `$.records[*].vendors[*].expenses / $.records[*].vendors[*].budget`   |
 | `median_used_budget`           | `_used_budget`   | `parse_median`     |                                                                       |
 
+When these S-V-O sentences are evaluated, it produces the following derived attributes:
+
+```py
+{
+    "total_vendor_count": 4,
+    "max_budget_only_contract": 10000,
+    "median_used_budget": 0.825,
+}
+```
+
 
 ## Subject-Verb-Object grammar
 
