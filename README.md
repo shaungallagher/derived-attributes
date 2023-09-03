@@ -19,44 +19,44 @@ This library provides a fast, succint way of defining and computing these derive
 
 Suppose you have the following JSON-like object, which contains vendor expense data for multiple businesses:
 
-```
+```py
 source = {
-  "records": [
-    {
-      "business_name": "ABC Electronics",
-      "vendors": [
+    "records": [
         {
-          "vendor_name": "Tech Solutions",
-          "has_contract": True,
-          "budget": 15000,
-          "expenses": 12000
+            "business_name": "ABC Electronics",
+            "vendors": [
+                {
+                    "vendor_name": "Tech Solutions",
+                    "has_contract": False,
+                    "budget": 15000,
+                    "expenses": 8000,
+                },
+                {
+                    "vendor_name": "Office Supplies Inc.",
+                    "has_contract": True,
+                    "budget": 2000,
+                    "expenses": 1500,
+                },
+            ],
         },
         {
-          "vendor_name": "Office Supplies Inc.",
-          "has_contract": False,
-          "budget": 2000,
-          "expenses": 1800
-        }
-      ],
-    },
-    {
-      "business_name": "XYZ Marketing",
-      "vendors": [
-        {
-          "vendor_name": "AdvertiseNow",
-          "has_contract": True,
-          "budget": 10000,
-          "expenses": 9000
+            "business_name": "XYZ Marketing",
+            "vendors": [
+                {
+                    "vendor_name": "AdvertiseNow",
+                    "has_contract": True,
+                    "budget": 10000,
+                    "expenses": 9000,
+                },
+                {
+                    "vendor_name": "Print House",
+                    "has_contract": True,
+                    "budget": 3000,
+                    "expenses": 3000,
+                },
+            ],
         },
-        {
-          "vendor_name": "Print House",
-          "has_contract": True,
-          "budget": 3000,
-          "expenses": 2500
-        }
-      ],
-    }
-  ]
+    ]
 }
 ```
 
@@ -64,7 +64,7 @@ Suppose you would like to derive the following attributes based on this data:
 
 * `total_vendor_count`: The number of vendors across all businesses.
 * `max_budget_only_contract`: The highest budget for vendors with a contract.
-* `avg_used_budget`: The average percentage of the monthly budget that has been unused.
+* `median_used_budget`: The median percentage of the monthly budget that has been used.
 
 One approach to computing these derived values might be to normalize the data, create two-dimensional representations via database tables or data frames, then query and aggregate the data using tools like SQL or Pandas.
 
@@ -72,10 +72,10 @@ Derived Attributes allows you to instead work with the data in its JSON form, sp
 
 | Attribute                      | Subject          | Verb               | Object                                                                |
 | ------------------------------ | ---------------  | ------------------ | --------------------------------------------------------------------- |
-| `total_vendor_count`           | `source`         | `parse_len`        | `$.records[*].vendors`                                                |
-| `max_budget_only_contract`     | `source`         | `parse_max`        | `$.records[*].vendors[?has_contract = true)].budget`                  |
+| `total_vendor_count`           | `source`         | `parse_len`        | `$.records[*].vendors[*]`                                             |
+| `max_budget_only_contract`     | `source`         | `parse_max`        | `$.records[*].vendors[?has_contract == true].budget`                  |
 | `_used_budget`                 | `source`         | `parse_list`       | `$.records[*].vendors[*].expenses / $.records[*].vendors[*].budget`   |
-| `avg_used_budget`              | `_used_budget`   | `parse_mean`       |                                                                       |
+| `median_used_budget`           | `_used_budget`   | `parse_median`     |                                                                       |
 
 
 ## Subject-Verb-Object grammar
@@ -121,22 +121,3 @@ The grammar supports the ability to nest operations.  Each Derived Attribute can
 The Derived Attributes library uses [jsonpath-ng](https://github.com/h2non/jsonpath-ng) to parse JSONPath expressions.
 
 Please see that project's [JSONPath Syntax](https://github.com/h2non/jsonpath-ng) section for more details about how to construct these expressions.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

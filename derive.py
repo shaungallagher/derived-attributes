@@ -57,6 +57,7 @@ VERB_FUNCTIONS = {
     "sum": lambda x, _: sum(x),
     "min": lambda x, _: min(x),
     "max": lambda x, _: max(x),
+    "median": lambda x, _: median(x),
     "parse_len": lambda x, y: len(jsonpath_parse_list(x, y)),
     "parse_sum": lambda x, y: sum(jsonpath_parse_list(x, y)),
     "parse_min": lambda x, y: min(jsonpath_parse_list(x, y)),
