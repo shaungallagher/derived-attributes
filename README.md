@@ -87,6 +87,8 @@ When these S-V-O sentences are evaluated, it produces the following derived attr
 }
 ```
 
+Note: Attributes prefixed with an underscore are considered private and are useful for holding the results of intermediate calculations.  They are not returned.
+
 
 ## Subject-Verb-Object grammar
 
