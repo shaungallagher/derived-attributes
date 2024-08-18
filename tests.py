@@ -1,7 +1,8 @@
-from derive import DeriveAttributes, Sentence
+from derive import DeriveAttributes, DeriveRules, DeriveTriggers, Sentence, Trigger
 
 
-class TestClass:
+class TestDeriveAttributes:
+
     def test_readme_example(self):
         sentences = [
             Sentence(
@@ -186,3 +187,211 @@ class TestClass:
             "test_max": 50,
         }
         assert results == expected
+
+    def test_parse_jsonata_syntax(self):
+        sentences = [
+            Sentence(
+                "total_expenses", "source", "parse_jsonata",
+                "$sum(records.vendors.expenses)",
+            ),
+            Sentence(
+                "remaining_budget",
+                "source",
+                "parse_jsonata",
+                "$sum(records.vendors.(budget - expenses))",
+            ),
+            Sentence(
+                "has_contract_booleans",
+                "source",
+                "parse_jsonata",
+                (
+                    "(records[0].vendors[0].has_contract) or "
+                    "(records[1].vendors[0].has_contract = "
+                    "records[1].vendors[1].has_contract)"
+                ),
+            ),
+        ]
+        source = {
+            "records": [
+                {
+                    "business_name": "ABC Electronics",
+                    "vendors": [
+                        {
+                            "vendor_name": "Tech Solutions",
+                            "has_contract": False,
+                            "budget": 15000,
+                            "expenses": 8000,
+                        },
+                        {
+                            "vendor_name": "Office Supplies Inc.",
+                            "has_contract": True,
+                            "budget": 2000,
+                            "expenses": 1500,
+                        },
+                    ],
+                },
+                {
+                    "business_name": "XYZ Marketing",
+                    "vendors": [
+                        {
+                            "vendor_name": "AdvertiseNow",
+                            "has_contract": True,
+                            "budget": 10000,
+                            "expenses": 9000,
+                        },
+                        {
+                            "vendor_name": "Print House",
+                            "has_contract": True,
+                            "budget": 3000,
+                            "expenses": 3000,
+                        },
+                    ],
+                },
+            ]
+        }
+        da = DeriveAttributes(sentences, source)
+        results = da.derive()
+
+        expected = {
+            "total_expenses": 21500,
+            "remaining_budget": 8500,
+            "has_contract_booleans": True,
+        }
+
+        assert results == expected
+
+
+class TestDeriveRules:
+
+    def test_all_rules_pass(self):
+        sentences = [
+            Sentence(
+                "_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"
+            ),
+            Sentence(
+                "has_multiple_vendors", "_vendor_count", ">", 1
+            ),
+            Sentence(
+                "_record_count", "source", "parse_len", "$.records[*]"
+            ),
+            Sentence(
+                "has_multiple_records", "_record_count", ">", 1
+            ),
+        ]
+        source = {
+            "records": [
+                {
+                    "business_name": "ABC Electronics",
+                    "vendors": [
+                        {
+                            "vendor_name": "Tech Solutions",
+                            "has_contract": False,
+                            "budget": 15000,
+                            "expenses": 8000,
+                        },
+                        {
+                            "vendor_name": "Office Supplies Inc.",
+                            "has_contract": True,
+                            "budget": 2000,
+                            "expenses": 1500,
+                        },
+                    ],
+                },
+                {
+                    "business_name": "XYZ Marketing",
+                    "vendors": [
+                        {
+                            "vendor_name": "AdvertiseNow",
+                            "has_contract": True,
+                            "budget": 10000,
+                            "expenses": 9000,
+                        },
+                        {
+                            "vendor_name": "Print House",
+                            "has_contract": True,
+                            "budget": 3000,
+                            "expenses": 3000,
+                        },
+                    ],
+                },
+            ]
+        }
+        da = DeriveRules(sentences, source)
+        results = da.derive()
+
+        all_rules_pass = all(results)
+        assert all_rules_pass is True
+
+
+class TestDeriveTriggers:
+
+    def test_all_triggers_fire(self, mocker):
+        triggers = [
+            Trigger(
+                "_source_id", "source", "parse", "$.source_id"
+            ),
+            Trigger(
+                "_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"
+            ),
+            Trigger(
+                "has_multiple_vendors", "_vendor_count", ">", 1,
+                'do_something', ["_source_id"],
+            ),
+            Trigger(
+                "_record_count", "source", "parse_len", "$.records[*]"
+            ),
+            Trigger(
+                "has_multiple_records", "_record_count", ">", 1,
+                'do_something_else', ["_source_id"],
+            ),
+        ]
+        source = {
+            "source_id": "123-789",
+            "records": [
+                {
+                    "business_name": "ABC Electronics",
+                    "vendors": [
+                        {
+                            "vendor_name": "Tech Solutions",
+                            "has_contract": False,
+                            "budget": 15000,
+                            "expenses": 8000,
+                        },
+                        {
+                            "vendor_name": "Office Supplies Inc.",
+                            "has_contract": True,
+                            "budget": 2000,
+                            "expenses": 1500,
+                        },
+                    ],
+                },
+                {
+                    "business_name": "XYZ Marketing",
+                    "vendors": [
+                        {
+                            "vendor_name": "AdvertiseNow",
+                            "has_contract": True,
+                            "budget": 10000,
+                            "expenses": 9000,
+                        },
+                        {
+                            "vendor_name": "Print House",
+                            "has_contract": True,
+                            "budget": 3000,
+                            "expenses": 3000,
+                        },
+                    ],
+                },
+            ]
+        }
+
+        mock_event_handler = mocker.MagicMock()
+
+        da = DeriveTriggers(triggers, source, mock_event_handler)
+
+        da.derive()
+
+        assert mock_event_handler.call_count == 2
+
+        mock_event_handler.assert_any_call('do_something', "123-789")
+        mock_event_handler.assert_any_call('do_something_else', "123-789")

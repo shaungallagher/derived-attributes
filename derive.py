@@ -1,11 +1,14 @@
 import operator
 from dataclasses import dataclass
 from datetime import date, timedelta
+import json
 from statistics import median
-from typing import Any, List
+from typing import Any, Callable, List, Optional
 
 from jsonpath_ng.ext import parse
 from jsonpath_ng.ext.parser import ExtendedJsonPathLexer
+
+import jsonata
 
 # Necessary to support division operations
 ExtendedJsonPathLexer.t_SORT_DIRECTION.__doc__ = r",?\s*(//|\\)"
@@ -21,10 +24,21 @@ class Sentence:
     attr: str
     subject: str
     verb: str
-    obj: Any
+    obj: Optional[Any]
 
     def __iter__(self):
         return iter((self.attr, self.subject, self.verb, self.obj))
+
+
+@dataclass
+class Trigger(Sentence):
+    action: Optional[str] = None
+    params: Optional[List[str]] = None
+
+    def __iter__(self):
+        return iter(
+            (self.attr, self.subject, self.verb, self.obj, self.action, self.params)
+        )
 
 
 def jsonpath_parse_val(dict_to_parse, path):
@@ -43,8 +57,15 @@ def jsonpath_parse_list(dict_to_parse, path):
     return [match.value for match in jsonpath_expr.find(dict_to_parse)]
 
 
+def parse_jsonata(dict_to_parse, query):
+    expr = jsonata.Jsonata(query)
+    result = expr.evaluate(dict_to_parse)
+    return result
+
+
 # The functions to call for each verb.
 VERB_FUNCTIONS = {
+    "parse_jsonata": parse_jsonata,
     "parse": jsonpath_parse_val,
     "parse_list": jsonpath_parse_list,
     ">": lambda x, y: operator.gt(int(x), int(y)),
@@ -78,7 +99,14 @@ JOINING_VERBS = [
 ]
 
 
+
 class DeriveAttributes:
+    """
+    The DeriveAttributes class accepts a JSON-like source object
+    and derives new attributes from that data, based on attribute
+    definitions in a list of Sentences.
+    """
+
     def __init__(self, sentences: List[Sentence], source: dict):
         self.sentences = sentences
         self.source = source
@@ -116,7 +144,7 @@ class DeriveAttributes:
         evaluate the object (if necessary), then complete the evaluation
         of the sentence.
         """
-        attr, subject, verb, obj = sentence
+        _, subject, verb, obj, *_ = sentence
 
         # Set the subject, evaluating if necessary
         if subject == "source":
@@ -135,5 +163,64 @@ class DeriveAttributes:
                 obj, self.evaluate_attribute(self.get_sentence(obj))
             )
 
+        self.evaluate_sentence(sentence, subject, verb_func, obj)
+
+    def evaluate_sentence(self, sentence, subject, verb_func, obj):
         # Evaluate the sentence by invoking the verb function
-        self.evaluated[attr] = verb_func(subject, obj)
+        self.evaluated[sentence.attr] = verb_func(subject, obj)
+
+
+class DeriveRules(DeriveAttributes):
+    """
+    The DeriveRules class is similar to DeriveAttributes,
+    but it treats Sentences that generate boolean values
+    as rules.  By only returning the derived True/False rules,
+    this class enables a lightweight, flexible rules engine
+    that can be evaluated using any() or all().
+    """
+
+    def derive(self) -> dict:
+        self.evaluate_attributes()
+
+        # Remove private attributes from result
+        result = {k: v for k, v in self.evaluated.items() if k[0] != "_"}
+
+        # Return only boolean values
+        return [v for v in result.values() if type(v) is bool]
+
+
+class DeriveTriggers(DeriveAttributes):
+    """
+    The DeriveTriggers class is similar to DeriveAttributes
+    but accepts an additional event_handler function that will
+    be used to handle events triggered during the evaluation
+    process.  This class accepts Triggers, which are Sentences
+    augmented with event-handling attributes.  When a Trigger
+    to True, the event_handler function will be invoked with
+    two parameters: an action name and a list of parameters,
+    which can included derived attributes.
+    """
+
+    def __init__(
+        self,
+        sentences: List[Trigger],
+        source: dict,
+        event_handler: Callable
+    ):
+        self.sentences = sentences
+        self.source = source
+        self.event_handler = event_handler
+        self.evaluated = {}
+
+    def evaluate_sentence(self, sentence, subject, verb_func, obj):
+        result = verb_func(subject, obj)
+        self.evaluated[sentence.attr] = result
+
+        params = (
+            [self.evaluated[param] for param in sentence.params]
+            if sentence.params
+            else []
+        )
+
+        if type(result) is bool and result is True and sentence.action:
+            self.event_handler(sentence.action, *params)
