@@ -1,5 +1,6 @@
 # Derived Attributes
-A Python library for applying computations to a JSON object using a Subject-Verb-Object grammar.<br><br>
+
+A Python library for applying computations to a JSON object using a Subject-Verb-Object grammar.
 
 
 ## What does this library do, and why is it useful?
@@ -129,8 +130,43 @@ The grammar supports the ability to nest operations.  Each Derived Attribute can
 | parse_median    | Returns the median numeric value from all values that match a JSONPath expression.        |
 
 
+
 ## JSONPath syntax in Objects
 
-The Derived Attributes library uses [jsonpath-ng](https://github.com/h2non/jsonpath-ng) to parse JSONPath expressions.
+By default, the Derived Attributes library uses [jsonpath-ng](https://github.com/h2non/jsonpath-ng) to parse JSONPath expressions.
 
 Please see that project's [JSONPath Syntax](https://github.com/h2non/jsonpath-ng) section for more details about how to construct these expressions.
+
+If you would prefer to use [Jsonata](https://jsonata.org) syntax to query your data, that can be achieved by specifying `parse_jsonata` as the Verb.
+
+
+## Derived Rules
+
+This library also provides the ability to construct a simple rules engine using similar mechanics to Derived Attributes.
+
+Derived Rules employ the same S-V-O sentence structure for defining rules, but instead of returning the attributes, it treats them as rules that evaluate to `True` or `False`.
+
+This allows flexible implementations that employ built-in Python methods such as:
+
+- `any()` if at least one of the specified rule needs to match
+- `all()` if all of the specified rules need to match
+- `sum()` for a scorecard approach, where the number of rules that evaluate to `True` needs to exceed some threshold
+
+
+## Derived Triggers
+
+When you want to trigger events based on the evaluated data, you can use Derived Triggers.
+
+A trigger uses the same S-V-O sentence structure as Derived Attributes, but it also supports two additional inputs: an event name that should be sent to a supplied event handler, and a list of parameters that should be included in the event.
+
+For example, consider the following list of triggers:
+
+| Attribute   | Subject    | Verb     | Object     | Action         | Params               |
+| ----------- | ---------- | -------- | ---------- | -------------- | -------------------- |
+| `_color`    | `source`   | `parse`  | `$.color`  |                |                      |
+| `_id`       | `source`   | `parse`  | `$.id`     |                |                      |
+| `is_red`    | `_color`   | `=`      | `red`      | `record_color` | `["_color", "_id"]` |
+| `is_blue`   | `_color`   | `=`      | `blue`     | `record_color` | `["_color", "_id"]` |
+| `is_green`  | `_color`   | `=`      | `green`    | `record_color` | `["_color", "_id"]` |
+
+When a trigger evaluates to `True`, an action name and optional parameters are passed to an event handler, which can further process the event.
