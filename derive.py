@@ -1,14 +1,12 @@
 import operator
 from dataclasses import dataclass
 from datetime import date, timedelta
-import json
 from statistics import median
 from typing import Any, Callable, List, Optional
 
+import jsonata
 from jsonpath_ng.ext import parse
 from jsonpath_ng.ext.parser import ExtendedJsonPathLexer
-
-import jsonata
 
 # Necessary to support division operations
 ExtendedJsonPathLexer.t_SORT_DIRECTION.__doc__ = r",?\s*(//|\\)"
@@ -97,7 +95,6 @@ JOINING_VERBS = [
     "or",
     "list_divide",
 ]
-
 
 
 class DeriveAttributes:
@@ -201,12 +198,7 @@ class DeriveTriggers(DeriveAttributes):
     which can included derived attributes.
     """
 
-    def __init__(
-        self,
-        sentences: List[Trigger],
-        source: dict,
-        event_handler: Callable
-    ):
+    def __init__(self, sentences: List[Trigger], source: dict, event_handler: Callable):
         self.sentences = sentences
         self.source = source
         self.event_handler = event_handler

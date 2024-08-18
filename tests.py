@@ -191,7 +191,9 @@ class TestDeriveAttributes:
     def test_parse_jsonata_syntax(self):
         sentences = [
             Sentence(
-                "total_expenses", "source", "parse_jsonata",
+                "total_expenses",
+                "source",
+                "parse_jsonata",
                 "$sum(records.vendors.expenses)",
             ),
             Sentence(
@@ -265,18 +267,10 @@ class TestDeriveRules:
 
     def test_all_rules_pass(self):
         sentences = [
-            Sentence(
-                "_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"
-            ),
-            Sentence(
-                "has_multiple_vendors", "_vendor_count", ">", 1
-            ),
-            Sentence(
-                "_record_count", "source", "parse_len", "$.records[*]"
-            ),
-            Sentence(
-                "has_multiple_records", "_record_count", ">", 1
-            ),
+            Sentence("_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"),
+            Sentence("has_multiple_vendors", "_vendor_count", ">", 1),
+            Sentence("_record_count", "source", "parse_len", "$.records[*]"),
+            Sentence("has_multiple_records", "_record_count", ">", 1),
         ]
         source = {
             "records": [
@@ -327,22 +321,24 @@ class TestDeriveTriggers:
 
     def test_all_triggers_fire(self, mocker):
         triggers = [
+            Trigger("_source_id", "source", "parse", "$.source_id"),
+            Trigger("_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"),
             Trigger(
-                "_source_id", "source", "parse", "$.source_id"
+                "has_multiple_vendors",
+                "_vendor_count",
+                ">",
+                1,
+                "do_something",
+                ["_source_id"],
             ),
+            Trigger("_record_count", "source", "parse_len", "$.records[*]"),
             Trigger(
-                "_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"
-            ),
-            Trigger(
-                "has_multiple_vendors", "_vendor_count", ">", 1,
-                'do_something', ["_source_id"],
-            ),
-            Trigger(
-                "_record_count", "source", "parse_len", "$.records[*]"
-            ),
-            Trigger(
-                "has_multiple_records", "_record_count", ">", 1,
-                'do_something_else', ["_source_id"],
+                "has_multiple_records",
+                "_record_count",
+                ">",
+                1,
+                "do_something_else",
+                ["_source_id"],
             ),
         ]
         source = {
@@ -382,7 +378,7 @@ class TestDeriveTriggers:
                         },
                     ],
                 },
-            ]
+            ],
         }
 
         mock_event_handler = mocker.MagicMock()
@@ -393,5 +389,5 @@ class TestDeriveTriggers:
 
         assert mock_event_handler.call_count == 2
 
-        mock_event_handler.assert_any_call('do_something', "123-789")
-        mock_event_handler.assert_any_call('do_something_else', "123-789")
+        mock_event_handler.assert_any_call("do_something", "123-789")
+        mock_event_handler.assert_any_call("do_something_else", "123-789")
