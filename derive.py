@@ -1,14 +1,12 @@
 import operator
 from dataclasses import dataclass
 from datetime import date, timedelta
-import json
 from statistics import median
 from typing import Any, Callable, List, Optional
 
+import jsonata
 from jsonpath_ng.ext import parse
 from jsonpath_ng.ext.parser import ExtendedJsonPathLexer
-
-import jsonata
 
 # Necessary to support division operations
 ExtendedJsonPathLexer.t_SORT_DIRECTION.__doc__ = r",?\s*(//|\\)"
@@ -24,7 +22,7 @@ class Sentence:
     attr: str
     subject: str
     verb: str
-    obj: Optional[Any]
+    obj: Optional[Any] = None
 
     def __iter__(self):
         return iter((self.attr, self.subject, self.verb, self.obj))
@@ -41,7 +39,7 @@ class Trigger(Sentence):
         )
 
 
-def jsonpath_parse_val(dict_to_parse, path):
+def jsonpath_parse_val(dict_to_parse: dict, path: str):
     """
     Parse a path that matches a single scalar value, then return that value.
     """
@@ -49,7 +47,7 @@ def jsonpath_parse_val(dict_to_parse, path):
     return next(iter(match.value for match in jsonpath_expr.find(dict_to_parse)), None)
 
 
-def jsonpath_parse_list(dict_to_parse, path):
+def jsonpath_parse_list(dict_to_parse: dict, path: str):
     """
     Parse a path that matches a list of values, then return that list.
     """
@@ -57,7 +55,10 @@ def jsonpath_parse_list(dict_to_parse, path):
     return [match.value for match in jsonpath_expr.find(dict_to_parse)]
 
 
-def parse_jsonata(dict_to_parse, query):
+def parse_jsonata(dict_to_parse: dict, query: str):
+    """
+    Parse a query in Jsonata syntax and evaluate it against the dict.
+    """
     expr = jsonata.Jsonata(query)
     result = expr.evaluate(dict_to_parse)
     return result
@@ -99,7 +100,6 @@ JOINING_VERBS = [
 ]
 
 
-
 class DeriveAttributes:
     """
     The DeriveAttributes class accepts a JSON-like source object
@@ -120,7 +120,7 @@ class DeriveAttributes:
         self.evaluate_attributes()
 
         # Remove private attributes from result
-        result = {k: v for k, v in self.evaluated.items() if k[0] != "_"}
+        result = {k: v for k, v in self.evaluated.items() if not k.startswith("_")}
 
         # Return the list of derived attributes
         return result
@@ -134,10 +134,14 @@ class DeriveAttributes:
             if sentence.attr not in self.evaluated:
                 self.evaluate_attribute(sentence)
 
-    def get_sentence(self, attr):
-        return next(iter(a for a in self.sentences if a.attr == attr), None)
+    def get_sentence(self, attr: str) -> Optional[Sentence]:
+        """
+        Get the sentence that matches the supplied attribute name,
+        if it exists in self.sentences.
+        """
+        return next(iter(s for s in self.sentences if s.attr == attr), None)
 
-    def evaluate_attribute(self, sentence):
+    def evaluate_attribute(self, sentence: Sentence):
         """
         For the supplied sentence, recursively evaluate the subject
         (if necessary), look up the associated verb function, recursively
@@ -146,27 +150,40 @@ class DeriveAttributes:
         """
         _, subject, verb, obj, *_ = sentence
 
-        # Set the subject, evaluating if necessary
-        if subject == "source":
-            subject = self.source
-        else:
-            subject = self.evaluated.get(
-                subject, self.evaluate_attribute(self.get_sentence(subject))
-            )
+        # Evaluate the subject
+        subject = self.evaluate_subject(subject)
 
         # Get the function that corresponds to the specified verb
-        verb_func = VERB_FUNCTIONS[verb]
+        verb_func = VERB_FUNCTIONS.get(verb)
 
-        # Depending on the verb, some objects may require evaluation
+        # Evaluate the object if the verb requires it
         if verb in JOINING_VERBS:
-            obj = self.evaluated.get(
-                obj, self.evaluate_attribute(self.get_sentence(obj))
-            )
+            obj = self.evaluate_object(obj)
 
         self.evaluate_sentence(sentence, subject, verb_func, obj)
 
-    def evaluate_sentence(self, sentence, subject, verb_func, obj):
-        # Evaluate the sentence by invoking the verb function
+    def evaluate_subject(self, subject: str):
+        """
+        Fetch or evaluate the sentence subject.
+        """
+        if subject == "source":
+            return self.source
+        return self.evaluated.get(
+            subject, self.evaluate_attribute(self.get_sentence(subject))
+        )
+
+    def evaluate_object(self, obj: str):
+        """
+        Fetch or evaluate the sentence object.
+        """
+        return self.evaluated.get(obj, self.evaluate_attribute(self.get_sentence(obj)))
+
+    def evaluate_sentence(
+        self, sentence: Sentence, subject: str, verb_func: Callable, obj: str
+    ):
+        """
+        Evaluate the sentence by invoking the verb function.
+        """
         self.evaluated[sentence.attr] = verb_func(subject, obj)
 
 
@@ -183,7 +200,7 @@ class DeriveRules(DeriveAttributes):
         self.evaluate_attributes()
 
         # Remove private attributes from result
-        result = {k: v for k, v in self.evaluated.items() if k[0] != "_"}
+        result = {k: v for k, v in self.evaluated.items() if not k.startswith("_")}
 
         # Return only boolean values
         return [v for v in result.values() if type(v) is bool]
@@ -201,12 +218,7 @@ class DeriveTriggers(DeriveAttributes):
     which can included derived attributes.
     """
 
-    def __init__(
-        self,
-        sentences: List[Trigger],
-        source: dict,
-        event_handler: Callable
-    ):
+    def __init__(self, sentences: List[Trigger], source: dict, event_handler: Callable):
         self.sentences = sentences
         self.source = source
         self.event_handler = event_handler
