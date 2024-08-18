@@ -2,7 +2,6 @@ from derive import DeriveAttributes, DeriveRules, DeriveTriggers, Sentence, Trig
 
 
 class TestDeriveAttributes:
-
     def test_readme_example(self):
         sentences = [
             Sentence(
@@ -264,7 +263,6 @@ class TestDeriveAttributes:
 
 
 class TestDeriveRules:
-
     def test_all_rules_pass(self):
         sentences = [
             Sentence("_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"),
@@ -318,7 +316,6 @@ class TestDeriveRules:
 
 
 class TestDeriveTriggers:
-
     def test_all_triggers_fire(self, mocker):
         triggers = [
             Trigger("_source_id", "source", "parse", "$.source_id"),
