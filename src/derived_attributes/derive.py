@@ -241,11 +241,5 @@ class DeriveTriggers(DeriveAttributes):
             else {}
         )
 
-        # params = (
-        #     {param: self.evaluated[param] for param in sentence.params}
-        #     if sentence.params
-        #     else {}
-        # )
-
         if type(result) is bool and result is True and sentence.action:
             self.event_handler(sentence.action, **params)
