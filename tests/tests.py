@@ -1,4 +1,71 @@
-from derive import DeriveAttributes, DeriveRules, DeriveTriggers, Sentence, Trigger
+import pytest
+from pydantic import ValidationError
+
+from src.derived_attributes.derive import (
+    DeriveAttributes,
+    DeriveRules,
+    DeriveTriggers,
+    InputBuilder,
+    Sentence,
+    Trigger,
+)
+
+
+class TestInputBuilder:
+    def test_from_list_of_dicts_validation_success(self):
+        input = [
+            {
+                "attr": "test_name",
+                "subject": "source",
+                "verb": "parse_max",
+                "obj": "$.records[*].vendors[?has_contract == true].budget",
+            },
+            {
+                "attr": "test_name2",
+                "subject": "source",
+                "verb": "sum",
+                "obj": None,
+            },
+        ]
+
+        InputBuilder.from_list_of_dicts(input)
+
+    def test_from_list_of_dicts_validation_error(self):
+        input = [
+            {
+                "attr.invalid": "test_name",
+                "subject.invalid": "test_subject",
+                "obj.invalid": "test_obj",
+            },
+            {
+                "attr": 123,
+                "subject": 456,
+                "verb": None,
+                "obj": 789,
+            },
+        ]
+
+        with pytest.raises(ValidationError):
+            InputBuilder.from_list_of_dicts(input)
+
+    def test_from_csv_validation_success(self):
+        input = (
+            "attr,subject,verb,obj"
+            "test_name,source,parse_max,$.records[*].vendors[?has_contract == true].budget",
+            "test_name2,source,sum,",
+        )
+
+        InputBuilder.from_csv(input)
+
+    def test_from_csv_validation_error(self):
+        input = (
+            "attr.invalid,subject.invalid,obj.invalid"
+            "test_name,test_subject,test_obj",
+            "123,456,789",
+        )
+
+        with pytest.raises(ValidationError):
+            InputBuilder.from_csv(input)
 
 
 class TestDeriveAttributes:
