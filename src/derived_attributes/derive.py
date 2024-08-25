@@ -1,15 +1,15 @@
-import operator
-from dataclasses import dataclass
-from datetime import date, timedelta
-from statistics import median
-from typing import Any, Callable, List, Optional
+import csv
+from io import StringIO
+from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 
 import jsonata
 from jsonpath_ng.ext import parse
-from jsonpath_ng.ext.parser import ExtendedJsonPathLexer
+from pydantic import ValidationError, model_validator
+from pydantic.dataclasses import dataclass
 
-# Necessary to support division operations
-ExtendedJsonPathLexer.t_SORT_DIRECTION.__doc__ = r",?\s*(//|\\)"
+from src.derived_attributes.verbs import JOINING_VERBS, JSONPATH_VERBS, VERB_FUNCTIONS
+
+T = TypeVar("T")
 
 
 @dataclass
@@ -24,6 +24,28 @@ class Sentence:
     verb: str
     obj: Optional[Any] = None
 
+    @model_validator(mode="after")
+    def validate_syntax(cls, values):
+        if values.verb not in VERB_FUNCTIONS:
+            raise ValueError(f"Unsupported verb in sentence: {values.verb}")
+
+        if values.verb == "parse_jsonata":
+            try:
+                jsonata.Jsonata(values.obj)
+            except Exception:
+                raise SyntaxError(f"Invalid Jsonata syntax for {values.obj}")
+
+        if values.verb in JSONPATH_VERBS:
+            if not values.obj:
+                raise ValueError("Required Jsonpath object not present")
+
+            try:
+                parse(values.obj)
+            except Exception:
+                raise SyntaxError(f"Invalid Jsonpath syntax for {values.obj}")
+
+        return values
+
     def __iter__(self):
         return iter((self.attr, self.subject, self.verb, self.obj))
 
@@ -31,7 +53,13 @@ class Sentence:
 @dataclass
 class Trigger(Sentence):
     action: Optional[str] = None
-    params: Optional[List[str]] = None
+    params: Optional[List[Any]] = None
+
+    @model_validator(mode="after")
+    def validate_syntax(cls, values):
+        super().validate_syntax(values)
+        if values.params and not values.action:
+            raise ValueError("Parameters specified without action.")
 
     def __iter__(self):
         return iter(
@@ -39,65 +67,40 @@ class Trigger(Sentence):
         )
 
 
-def jsonpath_parse_val(dict_to_parse: dict, path: str):
+class InputBuilder:
     """
-    Parse a path that matches a single scalar value, then return that value.
+    Create and validate input objects (such as Sentences
+    or Triggers) based on supplied data.
     """
-    jsonpath_expr = parse(path)
-    return next(iter(match.value for match in jsonpath_expr.find(dict_to_parse)), None)
 
+    @staticmethod
+    def from_list_of_dicts(data: List[dict], data_type: Type[T] = Sentence) -> List[T]:
+        try:
 
-def jsonpath_parse_list(dict_to_parse: dict, path: str):
-    """
-    Parse a path that matches a list of values, then return that list.
-    """
-    jsonpath_expr = parse(path)
-    return [match.value for match in jsonpath_expr.find(dict_to_parse)]
+            # If trigger parameters are present, split them
+            for item in data:
+                if item.get("params") == "":
+                    item["params"] = None
+                elif item.get("params") and isinstance(item["params"], str):
+                    item["params"] = item["params"].split(",")
 
+            return [data_type(**item) for item in data]
+        except ValidationError:
+            raise
 
-def parse_jsonata(dict_to_parse: dict, query: str):
-    """
-    Parse a query in Jsonata syntax and evaluate it against the dict.
-    """
-    expr = jsonata.Jsonata(query)
-    result = expr.evaluate(dict_to_parse)
-    return result
+    @staticmethod
+    def from_csv(
+        csv_data: Union[str, StringIO], data_type: Type[T] = Sentence
+    ) -> List[T]:
+        # If csv_data is a string, convert it to a StringIO object
+        # so csv.reader can read it
+        if isinstance(csv_data, str):
+            csv_data = StringIO(csv_data)
 
+        # Parse the CSV data into a list of dictionaries
+        reader = csv.DictReader(csv_data)
 
-# The functions to call for each verb.
-VERB_FUNCTIONS = {
-    "parse_jsonata": parse_jsonata,
-    "parse": jsonpath_parse_val,
-    "parse_list": jsonpath_parse_list,
-    ">": lambda x, y: operator.gt(int(x), int(y)),
-    "<": lambda x, y: operator.lt(int(x), int(y)),
-    "=": lambda x, y: operator.eq(int(x), int(y)),
-    "eq": lambda x, y: operator.eq(x, y),
-    "and": lambda x, y: x and y,
-    "or": lambda x, y: x or y,
-    "len": lambda x, _: len(x),
-    "sum": lambda x, _: sum(x),
-    "min": lambda x, _: min(x),
-    "max": lambda x, _: max(x),
-    "median": lambda x, _: median(x),
-    "parse_len": lambda x, y: len(jsonpath_parse_list(x, y)),
-    "parse_sum": lambda x, y: sum(jsonpath_parse_list(x, y)),
-    "parse_min": lambda x, y: min(jsonpath_parse_list(x, y)),
-    "parse_max": lambda x, y: max(jsonpath_parse_list(x, y)),
-    "parse_median": lambda x, y: median(jsonpath_parse_list(x, y)),
-    "list_divide": lambda x, y: [float(a) / float(b) for a, b in zip(x, y)],
-    "within_last_days": lambda x, y: [
-        item for item in x if date.today() - item <= timedelta(days=y)
-    ],
-}
-
-# A subset of verbs require evaluation of both the
-# subject and object before the verb function can run.
-JOINING_VERBS = [
-    "and",
-    "or",
-    "list_divide",
-]
+        return InputBuilder.from_list_of_dicts([row for row in reader], data_type)
 
 
 class DeriveAttributes:
@@ -159,6 +162,10 @@ class DeriveAttributes:
         # Evaluate the object if the verb requires it
         if verb in JOINING_VERBS:
             obj = self.evaluate_object(obj)
+
+        # Or maybe the object has already been evaluated
+        elif self.evaluated.get(obj):
+            obj = self.evaluated[obj]
 
         self.evaluate_sentence(sentence, subject, verb_func, obj)
 
@@ -229,10 +236,10 @@ class DeriveTriggers(DeriveAttributes):
         self.evaluated[sentence.attr] = result
 
         params = (
-            [self.evaluated[param] for param in sentence.params]
+            {param: self.evaluated.get(param, param) for param in sentence.params}
             if sentence.params
-            else []
+            else {}
         )
 
         if type(result) is bool and result is True and sentence.action:
-            self.event_handler(sentence.action, *params)
+            self.event_handler(sentence.action, **params)
