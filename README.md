@@ -13,7 +13,7 @@ It is common, in such a case, to pass the object through a processing layer or E
 
 For instance, if your JSON object contains a list of customer transactions, one useful derived value might be `average_order_value`.
 
-This library provides a succint way of defining and computing these derived attributes.  (Essentially, the library becomes your processing layer.)  The derived attributes you define can be stored and managed in a variety of formats: in CSV files, in a database table, or in the codebase itself.
+This library provides a succint way of defining and computing these derived attributes.  (Essentially, the library becomes your processing layer.)  The sentences you define to generate these attributes can be stored and managed in a variety of formats: in CSV files, in a database table, or in the codebase itself.
 
 
 ## Example
@@ -69,7 +69,7 @@ Suppose you would like to derive the following attributes based on this data:
 
 One approach to computing these derived values might be to normalize the data, create two-dimensional representations via database tables or data frames, then query and aggregate the data using tools like SQL or Pandas.
 
-Derived Attributes allows you to instead work with the data in its JSON form, specifying the computions using a Subject-Verb-Object grammar that accepts JSONPath syntax:
+Derived Attributes allows you to instead work with the data in its JSON form -- essentially a deeply nested dictionary -- by specifying the computions using a Subject-Verb-Object grammar that accepts JSONPath syntax:
 
 | Attribute                      | Subject          | Verb               | Object                                                                |
 | ------------------------------ | ---------------  | ------------------ | --------------------------------------------------------------------- |
@@ -131,7 +131,7 @@ The grammar supports the ability to nest operations.  Each Derived Attribute can
 
 
 
-## JSONPath syntax in Objects
+## JSONPath and JSonata syntaxes
 
 By default, the Derived Attributes library uses [jsonpath-ng](https://github.com/h2non/jsonpath-ng) to parse JSONPath expressions.
 
@@ -139,12 +139,14 @@ Please see that project's [JSONPath Syntax](https://github.com/h2non/jsonpath-ng
 
 If you would prefer to use [Jsonata](https://jsonata.org) syntax to query your data, that can be achieved by specifying `parse_jsonata` as the Verb.
 
+Because Jsonata has its own [function library](https://docs.jsonata.org/string-functions), you can generate some derived attributes in a single step using Jsonata syntax that might take multiple steps using JSONPath syntax.
+
 
 ## Derived Rules
 
 This library also provides the ability to construct a simple rules engine using similar mechanics to Derived Attributes.
 
-Derived Rules employ the same S-V-O sentence structure for defining rules, but instead of returning the attributes, it treats them as rules that evaluate to `True` or `False`.
+Derived Rules employ the same S-V-O sentence structure for defining rules, but instead of returning the attributes themselves, it treats each sentence that evaluates to `True` or `False` as a rule.
 
 This allows flexible implementations that employ built-in Python methods such as:
 
