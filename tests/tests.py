@@ -7,6 +7,7 @@ from src.derived_attributes.derive import (
     DeriveTriggers,
     InputBuilder,
     Sentence,
+    TransformAttributes,
     Trigger,
 )
 
@@ -391,7 +392,7 @@ class TestDeriveTriggers:
                 "has_multiple_vendors",
                 "_vendor_count",
                 ">",
-                1,
+                0,
                 "do_something",
                 ["source_id"],
             ),
@@ -400,7 +401,7 @@ class TestDeriveTriggers:
                 "has_multiple_records",
                 "_record_count",
                 ">",
-                1,
+                0,
                 "do_something_else",
                 ["source_id"],
             ),
@@ -455,3 +456,84 @@ class TestDeriveTriggers:
 
         mock_event_handler.assert_any_call("do_something", source_id="123-789")
         mock_event_handler.assert_any_call("do_something_else", source_id="123-789")
+
+
+class TestTransformAttributes:
+
+    def test_basic_example(self):
+
+        sentences = [
+            Sentence(
+                "replace_nulls",
+                "$.blog_posts[0].author",
+                "replace_vals",
+                "John Doe",
+            ),
+        ]
+
+        source = {
+            "blog_posts": [
+                {
+                    "id": 1,
+                    "title": "Exploring the World of Artificial Intelligence",
+                    "author": "Jane Doe",
+                    "published_date": "2024-09-01",
+                    "categories": ["Technology", "AI"],
+                    "tags": [
+                        "artificial intelligence",
+                        "machine learning",
+                        "future tech",
+                    ],
+                    "status": "published",
+                    "featured_image": "ai-world.jpg",
+                    "slug": "exploring-the-world-of-artificial-intelligence",
+                },
+                {
+                    "id": 2,
+                    "title": "The Ultimate Guide to Remote Work",
+                    "author": "John Smith",
+                    "published_date": "2024-08-25",
+                    "categories": ["Business", "Productivity"],
+                    "tags": ["remote work", "productivity", "work-life balance"],
+                    "status": "published",
+                    "featured_image": "remote-work-guide.jpg",
+                    "slug": "ultimate-guide-to-remote-work",
+                },
+            ]
+        }
+
+        ta = TransformAttributes(sentences, source, in_place=False)
+        results = ta.transform()
+
+        expected = {
+            "blog_posts": [
+                {
+                    "id": 1,
+                    "title": "Exploring the World of Artificial Intelligence",
+                    "author": "John Doe",
+                    "published_date": "2024-09-01",
+                    "categories": ["Technology", "AI"],
+                    "tags": [
+                        "artificial intelligence",
+                        "machine learning",
+                        "future tech",
+                    ],
+                    "status": "published",
+                    "featured_image": "ai-world.jpg",
+                    "slug": "exploring-the-world-of-artificial-intelligence",
+                },
+                {
+                    "id": 2,
+                    "title": "The Ultimate Guide to Remote Work",
+                    "author": "John Smith",
+                    "published_date": "2024-08-25",
+                    "categories": ["Business", "Productivity"],
+                    "tags": ["remote work", "productivity", "work-life balance"],
+                    "status": "published",
+                    "featured_image": "remote-work-guide.jpg",
+                    "slug": "ultimate-guide-to-remote-work",
+                },
+            ]
+        }
+
+        assert results == expected

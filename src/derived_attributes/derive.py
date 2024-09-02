@@ -1,4 +1,5 @@
 import csv
+from copy import deepcopy
 from io import StringIO
 from typing import Any, Callable, List, Optional, Type, TypeVar, Union
 
@@ -7,7 +8,12 @@ from jsonpath_ng.ext import parse
 from pydantic import ValidationError, model_validator
 from pydantic.dataclasses import dataclass
 
-from src.derived_attributes.verbs import JOINING_VERBS, JSONPATH_VERBS, VERB_FUNCTIONS
+from src.derived_attributes.verbs import (
+    JOINING_VERBS,
+    JSONPATH_VERBS,
+    TRANFORM_VERB_FUNCTIONS,
+    VERB_FUNCTIONS,
+)
 
 T = TypeVar("T")
 
@@ -26,7 +32,10 @@ class Sentence:
 
     @model_validator(mode="after")
     def validate_syntax(cls, values):
-        if values.verb not in VERB_FUNCTIONS:
+        if (
+            values.verb not in VERB_FUNCTIONS
+            and values.verb not in TRANFORM_VERB_FUNCTIONS
+        ):
             raise ValueError(f"Unsupported verb in sentence: {values.verb}")
 
         if values.verb == "parse_jsonata":
@@ -244,3 +253,54 @@ class DeriveTriggers(DeriveAttributes):
         if type(result) is bool and result is True and sentence.action:
             # Parameters will be supplied as kwargs
             self.event_handler(sentence.action, **params)
+
+
+class TransformAttributes(DeriveAttributes):
+    """
+    The TransformAttributes class accepts a JSON-like source object
+    and a list of modifications to be performed on the object.
+    """
+
+    def __init__(self, sentences: List[Sentence], source: dict, in_place=False):
+        self.sentences = sentences
+        self.in_place = in_place
+        self.source = source if in_place else deepcopy(source)
+
+    def transform(self) -> dict:
+        """
+        Given a list of sentences and a JSON-like source object,
+        apply the transformations specified by the sentences
+        and return the transformed object.
+        """
+        self.evaluate_attributes()
+        return self.source
+
+    def evaluate_attributes(self) -> dict:
+        """
+        For every sentence, evaluate it and add the value to
+        the evaluated context.
+        """
+        for sentence in self.sentences:
+            self.evaluate_attribute(sentence)
+
+    def evaluate_attribute(self, sentence: Sentence):
+        """
+        For the supplied sentence, evaluate the subject, look up the
+        associated verb function, and apply the function to the source
+        object (using the supplied object, if necessary).
+        """
+        _, subject, verb, obj, *_ = sentence
+
+        # Get the function that corresponds to the specified verb
+        verb_func = TRANFORM_VERB_FUNCTIONS.get(verb)
+
+        self.evaluate_sentence(subject, verb_func, obj)
+
+    def evaluate_sentence(self, subject: str, verb_func: Callable, obj: str):
+        """
+        Evaluate the sentence by invoking the verb function.
+        """
+        if self.in_place:
+            verb_func(self.source, subject, obj)
+        else:
+            self.source = verb_func(self.source, subject, obj)

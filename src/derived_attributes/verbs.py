@@ -10,6 +10,26 @@ from jsonpath_ng.ext.parser import ExtendedJsonPathLexer
 ExtendedJsonPathLexer.t_SORT_DIRECTION.__doc__ = r",?\s*(//|\\)"
 
 
+def jsonpath_replace_val(dict_to_parse: dict, path: str, val: str):
+    """
+    Identify a path that matches a single scalar value, then replace that value.
+    """
+    jsonpath_expr = parse(path)
+    jsonpath_expr.find(dict_to_parse)
+    jsonpath_expr.update(dict_to_parse, val)
+    return dict_to_parse
+
+
+def jsonpath_replace_vals(dict_to_parse: dict, path: str, val: str):
+    """
+    Identify a path that matches a list of values, then replace all of those values.
+    """
+    jsonpath_expr = parse(path)
+    for _ in jsonpath_expr.find(dict_to_parse):
+        jsonpath_expr.update(dict_to_parse, val)
+    return dict_to_parse
+
+
 def jsonpath_parse_val(dict_to_parse: dict, path: str):
     """
     Parse a path that matches a single scalar value, then return that value.
@@ -64,6 +84,11 @@ VERB_FUNCTIONS = {
     "list_within_last_days": lambda x, y: [
         item for item in x if datetime.today() - item <= timedelta(days=int(y))
     ],
+}
+
+TRANFORM_VERB_FUNCTIONS = {
+    "replace_val": lambda x, y, z: jsonpath_replace_val(x, y, z),
+    "replace_vals": lambda x, y, z: jsonpath_replace_vals(x, y, z),
 }
 
 # A subset of verbs require evaluation of both the
