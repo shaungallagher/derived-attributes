@@ -90,6 +90,9 @@ When these S-V-O sentences are evaluated, it produces the following derived attr
 
 Note: Attributes prefixed with an underscore are considered private and are useful for holding the results of intermediate calculations.  They are not returned.
 
+For another example of how to use Derived Attributes in a real-world scenario, see [examples](https://github.com/shaungallagher/derived-attributes/tree/main/examples).
+
+
 
 ## Subject-Verb-Object grammar
 
@@ -154,6 +157,9 @@ This allows flexible implementations that employ built-in Python methods such as
 - `all()` if all of the specified rules need to match
 - `sum()` for a scorecard approach, where the number of rules that evaluate to `True` needs to exceed some threshold
 
+For an example of how to use Derived Rules in a real-world scenario, see [examples](https://github.com/shaungallagher/derived-attributes/tree/main/examples).
+
+
 
 ## Derived Triggers
 
@@ -172,3 +178,6 @@ For example, consider the following list of triggers:
 | `is_green`  | `_color`   | `=`      | `green`    | `record_color` | `["_color", "_id"]` |
 
 When a trigger evaluates to `True`, an action name and optional parameters are passed to an event handler, which can further process the event.
+
+For an example of how to use Derived Triggers in a real-world scenario, see [examples](https://github.com/shaungallagher/derived-attributes/tree/main/examples).
+
