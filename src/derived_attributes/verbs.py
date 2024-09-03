@@ -10,16 +10,6 @@ from jsonpath_ng.ext.parser import ExtendedJsonPathLexer
 ExtendedJsonPathLexer.t_SORT_DIRECTION.__doc__ = r",?\s*(//|\\)"
 
 
-def jsonpath_replace_val(dict_to_parse: dict, path: str, val: str):
-    """
-    Identify a path that matches a single scalar value, then replace that value.
-    """
-    jsonpath_expr = parse(path)
-    jsonpath_expr.find(dict_to_parse)
-    jsonpath_expr.update(dict_to_parse, val)
-    return dict_to_parse
-
-
 def jsonpath_replace_vals(dict_to_parse: dict, path: str, val: str):
     """
     Identify a path that matches a list of values, then replace all of those values.
@@ -108,7 +98,6 @@ VERB_FUNCTIONS = {
 }
 
 TRANFORM_VERB_FUNCTIONS = {
-    "replace_val": lambda x, y, z: jsonpath_replace_val(x, y, z),
     "replace_vals": lambda x, y, z: jsonpath_replace_vals(x, y, z),
     "remove_nodes": lambda x, y, _: jsonpath_remove_nodes(x, y),
     "add_node": lambda x, y, z: jsonpath_add_node(x, y, z),

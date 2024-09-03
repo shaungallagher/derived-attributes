@@ -255,9 +255,9 @@ class DeriveTriggers(DeriveAttributes):
             self.event_handler(sentence.action, **params)
 
 
-class TransformAttributes(DeriveAttributes):
+class TransformObject(DeriveAttributes):
     """
-    The TransformAttributes class accepts a JSON-like source object
+    The TransformObject class accepts a JSON-like source object
     and a list of modifications to be performed on the object.
     """
 

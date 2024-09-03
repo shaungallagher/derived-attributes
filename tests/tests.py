@@ -7,7 +7,7 @@ from src.derived_attributes.derive import (
     DeriveTriggers,
     InputBuilder,
     Sentence,
-    TransformAttributes,
+    TransformObject,
     Trigger,
 )
 
@@ -458,7 +458,7 @@ class TestDeriveTriggers:
         mock_event_handler.assert_any_call("do_something_else", source_id="123-789")
 
 
-class TestTransformAttributes:
+class TestTransformObject:
 
     def test_basic_example(self):
 
@@ -466,13 +466,13 @@ class TestTransformAttributes:
             Sentence(
                 "replace_author_name",
                 "$.blog_posts[0].author",
-                "replace_val",
+                "replace_vals",
                 "John Doe",
             ),
             Sentence(
                 "replace_ai",
                 "$.blog_posts[0].categories[1]",
-                "replace_val",
+                "replace_vals",
                 "Artificial Intelligence",
             ),
             Sentence(
@@ -532,7 +532,7 @@ class TestTransformAttributes:
             ]
         }
 
-        ta = TransformAttributes(sentences, source, in_place=False)
+        ta = TransformObject(sentences, source, in_place=False)
         results = ta.transform()
 
         expected = {
@@ -567,3 +567,112 @@ class TestTransformAttributes:
         }
 
         assert results == expected
+        assert source != expected
+
+    def test_in_place_transforms(self):
+
+        sentences = [
+            Sentence(
+                "replace_author_name",
+                "$.blog_posts[0].author",
+                "replace_vals",
+                "John Doe",
+            ),
+            Sentence(
+                "replace_ai",
+                "$.blog_posts[0].categories[1]",
+                "replace_vals",
+                "Artificial Intelligence",
+            ),
+            Sentence(
+                "update_statuses",
+                "$.blog_posts[*].status",
+                "replace_vals",
+                "ready-to-publish",
+            ),
+            Sentence(
+                "remove_featured_images",
+                "$.blog_posts[*].featured_image",
+                "remove_nodes",
+                None,
+            ),
+            Sentence(
+                "add_reviewer",
+                "$.blog_posts[*].reviewer",
+                "add_node",
+                "Roy G. Biv",
+            ),
+            Sentence(
+                "add_category",
+                "$.blog_posts[1].categories",
+                "add_to_list",
+                "Technology",
+            ),
+        ]
+
+        source = {
+            "blog_posts": [
+                {
+                    "id": 1,
+                    "title": "Exploring the World of Artificial Intelligence",
+                    "author": "Jane Doe",
+                    "published_date": "2024-09-01",
+                    "categories": ["Technology", "AI"],
+                    "tags": [
+                        "artificial intelligence",
+                        "machine learning",
+                        "future tech",
+                    ],
+                    "status": "published",
+                    "featured_image": "ai-world.jpg",
+                    "slug": "exploring-the-world-of-artificial-intelligence",
+                },
+                {
+                    "id": 2,
+                    "title": "The Ultimate Guide to Remote Work",
+                    "author": "John Smith",
+                    "published_date": "2024-08-25",
+                    "categories": ["Business", "Productivity"],
+                    "tags": ["remote work", "productivity", "work-life balance"],
+                    "status": "published",
+                    "featured_image": "remote-work-guide.jpg",
+                    "slug": "ultimate-guide-to-remote-work",
+                },
+            ]
+        }
+
+        ta = TransformObject(sentences, source, in_place=True)
+        ta.transform()
+
+        expected = {
+            "blog_posts": [
+                {
+                    "id": 1,
+                    "title": "Exploring the World of Artificial Intelligence",
+                    "author": "John Doe",
+                    "published_date": "2024-09-01",
+                    "categories": ["Technology", "Artificial Intelligence"],
+                    "tags": [
+                        "artificial intelligence",
+                        "machine learning",
+                        "future tech",
+                    ],
+                    "status": "ready-to-publish",
+                    "slug": "exploring-the-world-of-artificial-intelligence",
+                    "reviewer": "Roy G. Biv",
+                },
+                {
+                    "id": 2,
+                    "title": "The Ultimate Guide to Remote Work",
+                    "author": "John Smith",
+                    "published_date": "2024-08-25",
+                    "categories": ["Business", "Productivity", "Technology"],
+                    "tags": ["remote work", "productivity", "work-life balance"],
+                    "status": "ready-to-publish",
+                    "slug": "ultimate-guide-to-remote-work",
+                    "reviewer": "Roy G. Biv",
+                },
+            ]
+        }
+
+        assert source == expected
