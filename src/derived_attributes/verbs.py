@@ -30,6 +30,27 @@ def jsonpath_replace_vals(dict_to_parse: dict, path: str, val: str):
     return dict_to_parse
 
 
+def jsonpath_remove_nodes(dict_to_parse: dict, path: str):
+    jsonpath_expr = parse(path)
+    for _ in jsonpath_expr.find(dict_to_parse):
+        jsonpath_expr.filter(lambda _: True, dict_to_parse)
+    return dict_to_parse
+
+
+def jsonpath_add_node(dict_to_parse: dict, path: str, val: str):
+    jsonpath_expr = parse(path)
+    jsonpath_expr.update_or_create(dict_to_parse, val)
+    return dict_to_parse
+
+
+def jsonpath_add_to_list(dict_to_parse: dict, path: str, val: str):
+    jsonpath_expr = parse(path)
+    matches = jsonpath_expr.find(dict_to_parse)
+    for match in matches:
+        match.value.append(val)
+    return dict_to_parse
+
+
 def jsonpath_parse_val(dict_to_parse: dict, path: str):
     """
     Parse a path that matches a single scalar value, then return that value.
@@ -89,6 +110,9 @@ VERB_FUNCTIONS = {
 TRANFORM_VERB_FUNCTIONS = {
     "replace_val": lambda x, y, z: jsonpath_replace_val(x, y, z),
     "replace_vals": lambda x, y, z: jsonpath_replace_vals(x, y, z),
+    "remove_nodes": lambda x, y, _: jsonpath_remove_nodes(x, y),
+    "add_node": lambda x, y, z: jsonpath_add_node(x, y, z),
+    "add_to_list": lambda x, y, z: jsonpath_add_to_list(x, y, z),
 }
 
 # A subset of verbs require evaluation of both the
