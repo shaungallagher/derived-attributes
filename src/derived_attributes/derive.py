@@ -242,4 +242,5 @@ class DeriveTriggers(DeriveAttributes):
         )
 
         if type(result) is bool and result is True and sentence.action:
+            # Parameters will be supplied as kwargs
             self.event_handler(sentence.action, **params)

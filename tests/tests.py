@@ -385,7 +385,7 @@ class TestDeriveRules:
 class TestDeriveTriggers:
     def test_all_triggers_fire(self, mocker):
         triggers = [
-            Trigger("_source_id", "source", "parse", "$.source_id"),
+            Trigger("source_id", "source", "parse", "$.source_id"),
             Trigger("_vendor_count", "source", "parse_len", "$.records[*].vendors[*]"),
             Trigger(
                 "has_multiple_vendors",
@@ -393,7 +393,7 @@ class TestDeriveTriggers:
                 ">",
                 1,
                 "do_something",
-                ["_source_id"],
+                ["source_id"],
             ),
             Trigger("_record_count", "source", "parse_len", "$.records[*]"),
             Trigger(
@@ -402,7 +402,7 @@ class TestDeriveTriggers:
                 ">",
                 1,
                 "do_something_else",
-                ["_source_id"],
+                ["source_id"],
             ),
         ]
         source = {
@@ -453,5 +453,5 @@ class TestDeriveTriggers:
 
         assert mock_event_handler.call_count == 2
 
-        mock_event_handler.assert_any_call("do_something", "123-789")
-        mock_event_handler.assert_any_call("do_something_else", "123-789")
+        mock_event_handler.assert_any_call("do_something", source_id="123-789")
+        mock_event_handler.assert_any_call("do_something_else", source_id="123-789")
