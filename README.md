@@ -181,3 +181,29 @@ When a trigger evaluates to `True`, an action name and optional parameters are p
 
 For an example of how to use Derived Triggers in a real-world scenario, see [examples](https://github.com/shaungallagher/derived-attributes/tree/main/examples).
 
+
+
+## Transform Objects
+
+In some cases, you don't need to derive new attributes based on a JSON-like source object; instead, you need to apply modifications directly to the source object (or a copy of that object).
+
+Using a Subject-Verb-Object grammar similar to Derived Attributes, the `TransformObject` class allows you to specify which modifications to perform using JSONPath syntax.
+
+For this class:
+
+* The Subject is a JSONPath query that points to one or more nodes in the source object.
+
+* The Verb is a function to be performed on the specified node(s).
+
+* The Object, if required by the Verb, is a parameter supplied to the Verb function.
+
+The class can be initialized with `in_place=False`, which will return a new object, or with `in_place=True`, which will directly modify the source object.
+
+### Supported Transform Verbs
+
+| Transform Verb  | Definition                                                   |
+| --------------- | ------------------------------------------------------------ |
+| replace_vals    | Replaces the node(s)' value with the Object value.           |
+| remove_nodes    | Removes the specified node(s).  No Object value required.    |
+| add_node        | Adds the specified node and assigns it the Object value.     |
+| add_to_list     | Appends the Object value to the list specified by the query  |
