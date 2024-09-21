@@ -5,14 +5,15 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="derived-attributes",
-    version="0.2.1",
+    version="0.3.0",
     author="Shaun Gallagher",
     author_email="github-shaun@pressbin.com",
     description="A Python library for applying computations to a JSON object using a Subject-Verb-Object grammar.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/shaungallagher/derived-attributes",
-    packages=find_packages(),
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
