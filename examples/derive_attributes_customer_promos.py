@@ -22,9 +22,14 @@ Attributes.  These new attributes can be used to offer promotions.
 
 import csv
 import io
+import os
+import sys
 from datetime import datetime
 
-from src.derived_attributes.derive import DeriveAttributes, SentenceBuilder
+# Add 'src' to sys.path to be able to import the package
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+
+from derived_attributes.derive import DeriveAttributes, SentenceBuilder
 
 
 def derive_attributes_customer_promos():
