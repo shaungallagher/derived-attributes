@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.derived_attributes.derive import (
+from derived_attributes.derive import (
     DeriveAttributes,
     DeriveRules,
     DeriveTriggers,

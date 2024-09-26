@@ -8,7 +8,7 @@ from jsonpath_ng.ext import parse
 from pydantic import ValidationError, model_validator
 from pydantic.dataclasses import dataclass
 
-from src.derived_attributes.verbs import (
+from .verbs import (
     JOINING_VERBS,
     JSONPATH_VERBS,
     TRANFORM_VERB_FUNCTIONS,
